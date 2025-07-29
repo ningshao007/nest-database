@@ -10,18 +10,17 @@ import {
   HttpCode,
   HttpStatus,
   ParseIntPipe,
-  DefaultValuePipe
+  DefaultValuePipe,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
+import { ParamIdDto } from "./dto/param-id.dto";
 import { UserRole, UserStatus } from "./user.entity";
 
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  // 基础 CRUD 操作
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -35,22 +34,20 @@ export class UsersController {
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
+  findOne(@Param() { id }: ParamIdDto) {
     return this.usersService.findOne(id);
   }
 
   @Patch(":id")
-  update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
+  update(@Param() { id }: ParamIdDto, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
 
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param("id") id: string) {
+  remove(@Param() { id }: ParamIdDto) {
     return this.usersService.remove(id);
   }
-
-  // 高级查询操作
 
   @Get("search/query")
   searchUsers(@Query("q") query: string) {
@@ -134,12 +131,12 @@ export class UsersController {
   // 软删除操作
   @Delete("soft/:id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  softDelete(@Param("id") id: string) {
-    return this.usersService.softDelete(id);
+  softDelete(@Param() paramIdDto: ParamIdDto) {
+    return this.usersService.softDelete(paramIdDto.id);
   }
 
   @Post("restore/:id")
-  restore(@Param("id") id: string) {
-    return this.usersService.restore(id);
+  restore(@Param() paramIdDto: ParamIdDto) {
+    return this.usersService.restore(paramIdDto.id);
   }
 }

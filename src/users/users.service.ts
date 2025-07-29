@@ -2,7 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  BadRequestException
+  BadRequestException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import {
@@ -12,7 +12,7 @@ import {
   Between,
   In,
   IsNull,
-  Not
+  Not,
 } from "typeorm";
 import { User, UserRole, UserStatus } from "./user.entity";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -29,8 +29,8 @@ export class UsersService {
     const existingUser = await this.usersRepository.findOne({
       where: [
         { username: createUserDto.username },
-        { email: createUserDto.email }
-      ]
+        { email: createUserDto.email },
+      ],
     });
 
     if (existingUser) {
@@ -51,49 +51,45 @@ export class UsersService {
         "lastName",
         "role",
         "status",
-        "createdAt"
-      ]
+        "createdAt",
+      ],
     });
   }
 
   async findOne(id: string): Promise<User> {
-    try {
-      const user = await this.usersRepository.findOne({
-        where: { id }
-        // relations: ["orders"]
-      });
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ["orders"],
+    });
 
-      if (!user) {
-        throw new NotFoundException(`用户 ID ${id} 不存在`);
-      }
-
-      return user;
-    } catch (error) {
-      // 如果是 NotFoundException，直接抛出
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-
-      // 如果是数据库连接错误或其他错误，记录日志并抛出更友好的错误
-      console.error("查询用户时发生错误:", error);
-      throw new NotFoundException(`查询用户时发生错误: ${error.message}`);
+    if (!user) {
+      throw new NotFoundException(`用户 ID ${id} 不存在`);
     }
+
+    return user;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
 
-    // 如果要更新用户名或邮箱，检查是否与其他用户冲突
-    if (updateUserDto.username || updateUserDto.email) {
+    if (updateUserDto.username) {
       const existingUser = await this.usersRepository.findOne({
-        where: [
-          { username: updateUserDto.username, id: Not(id) },
-          { email: updateUserDto.email, id: Not(id) }
-        ]
+        where: { username: updateUserDto.username, id: Not(id) },
       });
 
       if (existingUser) {
-        throw new ConflictException("用户名或邮箱已被其他用户使用");
+        throw new ConflictException("用户名已被其他用户使用");
+      }
+    }
+
+    // 避免查询条件可能是undefined的情况
+    if (updateUserDto.email) {
+      const existingUser = await this.usersRepository.findOne({
+        where: { email: updateUserDto.email, id: Not(id) },
+      });
+
+      if (existingUser) {
+        throw new ConflictException("邮箱已被其他用户使用");
       }
     }
 
@@ -106,22 +102,19 @@ export class UsersService {
     await this.usersRepository.remove(user);
   }
 
-  // 高级查询操作
-
   async findByEmail(email: string): Promise<User> {
     return await this.usersRepository.findOne({
       where: { email },
-      select: ["id", "username", "email", "password", "role", "status"]
+      select: ["id", "username", "email", "password", "role", "status"],
     });
   }
 
   async findByUsername(username: string): Promise<User> {
     return await this.usersRepository.findOne({
-      where: { username }
+      where: { username },
     });
   }
 
-  // 分页查询
   async findWithPagination(
     page: number = 1,
     limit: number = 10
@@ -129,36 +122,35 @@ export class UsersService {
     const [users, total] = await this.usersRepository.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
-      order: { createdAt: "DESC" }
+      order: { createdAt: "DESC" },
     });
 
     return { users, total };
   }
 
-  // 搜索用户
   async searchUsers(query: string): Promise<User[]> {
     return await this.usersRepository.find({
       where: [
         { username: Like(`%${query}%`) },
         { email: Like(`%${query}%`) },
         { firstName: Like(`%${query}%`) },
-        { lastName: Like(`%${query}%`) }
+        { lastName: Like(`%${query}%`) },
       ],
-      order: { createdAt: "DESC" }
+      order: { createdAt: "DESC" },
     });
   }
 
   // 按角色查询
   async findByRole(role: UserRole): Promise<User[]> {
     return await this.usersRepository.find({
-      where: { role }
+      where: { role },
     });
   }
 
   // 按状态查询
   async findByStatus(status: UserStatus): Promise<User[]> {
     return await this.usersRepository.find({
-      where: { status }
+      where: { status },
     });
   }
 
@@ -166,10 +158,10 @@ export class UsersService {
   async getStats() {
     const totalUsers = await this.usersRepository.count();
     const activeUsers = await this.usersRepository.count({
-      where: { status: UserStatus.ACTIVE }
+      where: { status: UserStatus.ACTIVE },
     });
     const adminUsers = await this.usersRepository.count({
-      where: { role: UserRole.ADMIN }
+      where: { role: UserRole.ADMIN },
     });
 
     // 按角色统计
@@ -193,7 +185,7 @@ export class UsersService {
       active: activeUsers,
       admins: adminUsers,
       roleStats,
-      statusStats
+      statusStats,
     };
   }
 
@@ -214,10 +206,10 @@ export class UsersService {
     return await this.usersRepository.find({
       where: {
         status: UserStatus.ACTIVE,
-        orders: Not(IsNull())
+        orders: Not(IsNull()),
       },
       relations: ["orders"],
-      order: { createdAt: "DESC" }
+      order: { createdAt: "DESC" },
     });
   }
 
@@ -246,7 +238,7 @@ export class UsersService {
   ): Promise<void> {
     await this.usersRepository.manager.transaction(async (manager) => {
       const fromUser = await manager.findOne(User, {
-        where: { id: fromUserId }
+        where: { id: fromUserId },
       });
       const toUser = await manager.findOne(User, { where: { id: toUserId } });
 

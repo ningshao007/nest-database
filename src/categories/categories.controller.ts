@@ -1,7 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { CategoriesService } from './categories.service';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from "@nestjs/common";
+import { CategoriesService } from "./categories.service";
+import { ParamIdDto } from "./dto/param-id.dto";
 
-@Controller('categories')
+@Controller("categories")
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
@@ -15,18 +24,18 @@ export class CategoriesController {
     return this.categoriesService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.categoriesService.findOne(id);
+  @Get(":id")
+  findOne(@Param() paramIdDto: ParamIdDto) {
+    return this.categoriesService.findOne(paramIdDto.id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCategoryDto: any) {
-    return this.categoriesService.update(id, updateCategoryDto);
+  @Patch(":id")
+  update(@Param() paramIdDto: ParamIdDto, @Body() updateCategoryDto: any) {
+    return this.categoriesService.update(paramIdDto.id, updateCategoryDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.categoriesService.remove(id);
+  @Delete(":id")
+  remove(@Param() paramIdDto: ParamIdDto) {
+    return this.categoriesService.remove(paramIdDto.id);
   }
-} 
+}

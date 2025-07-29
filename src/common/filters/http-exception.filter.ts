@@ -4,9 +4,10 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
-  Logger
+  Logger,
 } from "@nestjs/common";
 import { Request, Response } from "express";
+import { QueryFailedError, EntityNotFoundError } from "typeorm";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -41,7 +42,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message: message
+      message: message,
     };
 
     response.status(status).json(errorResponse);
