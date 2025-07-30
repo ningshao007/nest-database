@@ -16,6 +16,9 @@ import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { ParamIdDto } from "./dto/param-id.dto";
+import { UpdateMultipleStatusDto } from "./dto/update-multiple-status.dto";
+import { DeleteMultipleDto } from "./dto/delete-multiple.dto";
+import { TransferBalanceDto } from "./dto/transfer-balance.dto";
 import { UserRole, UserStatus } from "./user.entity";
 
 @Controller("users")
@@ -104,27 +107,28 @@ export class UsersController {
   @Patch("batch/status")
   @HttpCode(HttpStatus.NO_CONTENT)
   updateMultipleStatus(
-    @Body() body: { userIds: string[]; status: UserStatus }
+    @Body() updateMultipleStatusDto: UpdateMultipleStatusDto
   ) {
-    return this.usersService.updateMultipleStatus(body.userIds, body.status);
+    return this.usersService.updateMultipleStatus(
+      updateMultipleStatusDto.userIds,
+      updateMultipleStatusDto.status
+    );
   }
 
   @Delete("batch/delete")
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteMultiple(@Body() body: { userIds: string[] }) {
-    return this.usersService.deleteMultiple(body.userIds);
+  deleteMultiple(@Body() deleteMultipleDto: DeleteMultipleDto) {
+    return this.usersService.deleteMultiple(deleteMultipleDto.userIds);
   }
 
   // 事务操作
   @Post("transfer-balance")
   @HttpCode(HttpStatus.NO_CONTENT)
-  transferBalance(
-    @Body() body: { fromUserId: string; toUserId: string; amount: number }
-  ) {
+  transferBalance(@Body() transferBalanceDto: TransferBalanceDto) {
     return this.usersService.transferBalance(
-      body.fromUserId,
-      body.toUserId,
-      body.amount
+      transferBalanceDto.fromUserId,
+      transferBalanceDto.toUserId,
+      transferBalanceDto.amount
     );
   }
 

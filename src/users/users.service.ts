@@ -189,7 +189,6 @@ export class UsersService {
     };
   }
 
-  // 批量操作
   async updateMultipleStatus(
     userIds: string[],
     status: UserStatus
@@ -201,7 +200,7 @@ export class UsersService {
     await this.usersRepository.delete(userIds);
   }
 
-  // 复杂查询示例
+  // TODO: check
   async findActiveUsersWithOrders(): Promise<User[]> {
     return await this.usersRepository.find({
       where: {
@@ -213,7 +212,7 @@ export class UsersService {
     });
   }
 
-  // 原生 SQL 查询示例
+  // TODO: check
   async findUsersWithOrderCount(): Promise<any[]> {
     return await this.usersRepository.query(`
       SELECT 
@@ -230,7 +229,6 @@ export class UsersService {
     `);
   }
 
-  // 事务操作示例
   async transferBalance(
     fromUserId: string,
     toUserId: string,

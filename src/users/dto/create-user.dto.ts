@@ -8,7 +8,7 @@ import {
   Min,
   MaxLength,
   Matches,
-  MinLength
+  MinLength,
 } from "class-validator";
 import { UserRole, UserStatus } from "../user.entity";
 
@@ -24,7 +24,7 @@ export class CreateUserDto {
   @IsString()
   @MinLength(6)
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-    message: "密码必须包含至少一个小写字母、一个大写字母和一个数字"
+    message: "密码必须包含至少一个小写字母、一个大写字母和一个数字",
   })
   password: string;
 
