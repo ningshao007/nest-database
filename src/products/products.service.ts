@@ -218,7 +218,6 @@ export class ProductsService {
       where: { originalPrice: Not(IsNull()) },
     });
 
-    // 按状态统计
     const statusStats = await this.productsRepository
       .createQueryBuilder("product")
       .select("product.status", "status")
@@ -226,7 +225,6 @@ export class ProductsService {
       .groupBy("product.status")
       .getRawMany();
 
-    // 按类型统计
     const typeStats = await this.productsRepository
       .createQueryBuilder("product")
       .select("product.type", "type")
@@ -234,7 +232,6 @@ export class ProductsService {
       .groupBy("product.type")
       .getRawMany();
 
-    // 按分类统计
     const categoryStats = await this.productsRepository
       .createQueryBuilder("product")
       .leftJoin("product.category", "category")
@@ -254,7 +251,6 @@ export class ProductsService {
     };
   }
 
-  // 库存管理
   async updateStock(productId: string, quantity: number): Promise<Product> {
     const product = await this.findOne(productId);
 
@@ -265,7 +261,6 @@ export class ProductsService {
 
     product.stockQuantity = newStock;
 
-    // 自动更新状态
     if (newStock === 0) {
       product.status = ProductStatus.OUT_OF_STOCK;
     } else if (product.status === ProductStatus.OUT_OF_STOCK) {
@@ -275,7 +270,6 @@ export class ProductsService {
     return await this.productsRepository.save(product);
   }
 
-  // 批量更新库存
   async updateMultipleStock(
     updates: { productId: string; quantity: number }[]
   ): Promise<void> {
@@ -301,7 +295,6 @@ export class ProductsService {
     });
   }
 
-  // 增加销量
   async incrementSoldCount(
     productId: string,
     quantity: number = 1

@@ -143,7 +143,6 @@ export class ProductsController {
     return this.productsService.findByAttributes(attributes);
   }
 
-  // 库存管理
   @Patch(":id/stock")
   updateStock(
     @Param() paramIdDto: ParamIdDto,
