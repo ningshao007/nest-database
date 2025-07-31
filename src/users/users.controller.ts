@@ -137,13 +137,14 @@ export class UsersController {
     );
   }
 
-  // 软删除操作
+  // 软删除操作, 需要有实体支持, @DeleteDateColumn
   @Delete("soft/:id")
   @HttpCode(HttpStatus.NO_CONTENT)
   softDelete(@Param("id", ParseUUIDPipe) id: string) {
     return this.usersService.softDelete(id);
   }
 
+  // 恢复软删除的记录
   @Post("restore/:id")
   restore(@Param("id", ParseUUIDPipe) id: string) {
     return this.usersService.restore(id);

@@ -5,15 +5,7 @@ import {
   BadRequestException
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import {
-  Repository,
-  FindOptionsWhere,
-  Like,
-  Between,
-  In,
-  IsNull,
-  Not
-} from "typeorm";
+import { Repository, Like, IsNull, Not } from "typeorm";
 import { User, UserRole, UserStatus } from "./user.entity";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -256,7 +248,6 @@ export class UsersService {
         throw new NotFoundException("用户不存在");
       }
 
-      // 使用原生SQL确保decimal精度
       const transferAmount = parseFloat(amount.toString());
       const fromUserBalance = parseFloat(fromUser.balance.toString());
       const toUserBalance = parseFloat(toUser.balance.toString());
@@ -265,7 +256,6 @@ export class UsersService {
         throw new BadRequestException("余额不足");
       }
 
-      // 使用原生SQL更新，确保decimal精度
       await manager.query("UPDATE users SET balance = $1 WHERE id = $2", [
         fromUserBalance - transferAmount,
         fromUserId
@@ -278,12 +268,10 @@ export class UsersService {
     });
   }
 
-  // 软删除示例（如果实体支持）
   async softDelete(id: string): Promise<void> {
     await this.usersRepository.softDelete(id);
   }
 
-  // 恢复软删除的记录
   async restore(id: string): Promise<void> {
     await this.usersRepository.restore(id);
   }
