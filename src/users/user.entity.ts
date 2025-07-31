@@ -26,6 +26,9 @@ export class User {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
+  @Column({ type: "int", generated: "increment" })
+  sequenceId: number;
+
   @Column({ length: 100, unique: true })
   username: string;
 

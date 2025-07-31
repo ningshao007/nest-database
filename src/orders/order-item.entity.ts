@@ -1,28 +1,37 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Order } from './order.entity';
-import { Product } from '../products/product.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn
+} from "typeorm";
+import { Order } from "./order.entity";
+import { Product } from "../products/product.entity";
 
-@Entity('order_items')
+@Entity("order_items")
 export class OrderItem {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ type: 'int' })
+  @Column({ type: "int", generated: "increment" })
+  sequenceId: number;
+
+  @Column({ type: "int" })
   quantity: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: "decimal", precision: 10, scale: 2 })
   unitPrice: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: "decimal", precision: 10, scale: 2 })
   totalPrice: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
   discount: number;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   notes: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: "jsonb", nullable: true })
   productSnapshot: {
     id: string;
     name: string;
@@ -32,15 +41,15 @@ export class OrderItem {
   };
 
   // 关联关系
-  @ManyToOne(() => Order, order => order.orderItems, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'order_id' })
+  @ManyToOne(() => Order, (order) => order.orderItems, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "order_id" })
   order: Order;
 
   @Column()
   orderId: string;
 
-  @ManyToOne(() => Product, product => product.orderItems)
-  @JoinColumn({ name: 'product_id' })
+  @ManyToOne(() => Product, (product) => product.orderItems)
+  @JoinColumn({ name: "product_id" })
   product: Product;
 
   @Column()
@@ -50,4 +59,4 @@ export class OrderItem {
   get finalPrice(): number {
     return this.totalPrice - this.discount;
   }
-} 
+}
