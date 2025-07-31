@@ -234,23 +234,47 @@ export class UsersService {
     amount: number
   ): Promise<void> {
     await this.usersRepository.manager.transaction(async (manager) => {
+      // const fromUserResult = await manager.query(
+      //   "SELECT id, balance FROM users WHERE id = $1",
+      //   [fromUserId]
+      // );
       const fromUser = await manager.findOne(User, {
-        where: { id: fromUserId }
+        where: { id: fromUserId },
+        select: ["id", "balance"]
       });
-      const toUser = await manager.findOne(User, { where: { id: toUserId } });
+
+      // const toUserResult = await manager.query(
+      //   "SELECT id, balance FROM users WHERE id = $1",
+      //   [toUserId]
+      // );
+      const toUser = await manager.findOne(User, {
+        where: { id: toUserId },
+        select: ["id", "balance"]
+      });
 
       if (!fromUser || !toUser) {
         throw new NotFoundException("用户不存在");
       }
 
-      if (fromUser.balance < amount) {
+      // 使用原生SQL确保decimal精度
+      const transferAmount = parseFloat(amount.toString());
+      const fromUserBalance = parseFloat(fromUser.balance.toString());
+      const toUserBalance = parseFloat(toUser.balance.toString());
+
+      if (fromUserBalance < transferAmount) {
         throw new BadRequestException("余额不足");
       }
 
-      fromUser.balance -= amount;
-      toUser.balance += amount;
+      // 使用原生SQL更新，确保decimal精度
+      await manager.query("UPDATE users SET balance = $1 WHERE id = $2", [
+        fromUserBalance - transferAmount,
+        fromUserId
+      ]);
 
-      await manager.save(User, [fromUser, toUser]);
+      await manager.query("UPDATE users SET balance = $1 WHERE id = $2", [
+        toUserBalance + transferAmount,
+        toUserId
+      ]);
     });
   }
 
