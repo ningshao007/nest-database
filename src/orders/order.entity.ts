@@ -40,6 +40,9 @@ export class Order {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
+  @Column({ type: "int", generated: "increment" })
+  sequenceId: number;
+
   @Column({ length: 50, unique: true })
   orderNumber: string;
 

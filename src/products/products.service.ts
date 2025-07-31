@@ -7,10 +7,8 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import {
   Repository,
-  FindOptionsWhere,
   Like,
   Between,
-  In,
   IsNull,
   Not,
   MoreThan,
@@ -306,12 +304,10 @@ export class ProductsService {
     );
   }
 
-  // 增加浏览量
   async incrementViewCount(productId: string): Promise<void> {
     await this.productsRepository.increment({ id: productId }, "viewCount", 1);
   }
 
-  // 更新评分
   async updateRating(productId: string, newRating: number): Promise<Product> {
     const product = await this.findOne(productId);
 
@@ -322,7 +318,6 @@ export class ProductsService {
     return await this.productsRepository.save(product);
   }
 
-  // 复杂查询示例
   async findProductsWithSalesData(): Promise<any[]> {
     return await this.productsRepository.query(`
       SELECT 

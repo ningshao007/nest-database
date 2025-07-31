@@ -2,18 +2,10 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  BadRequestException,
+  BadRequestException
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import {
-  Repository,
-  FindOptionsWhere,
-  Like,
-  Between,
-  In,
-  IsNull,
-  Not,
-} from "typeorm";
+import { Repository, Like, IsNull, Not } from "typeorm";
 import { User, UserRole, UserStatus } from "./user.entity";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -29,8 +21,8 @@ export class UsersService {
     const existingUser = await this.usersRepository.findOne({
       where: [
         { username: createUserDto.username },
-        { email: createUserDto.email },
-      ],
+        { email: createUserDto.email }
+      ]
     });
 
     if (existingUser) {
@@ -51,15 +43,15 @@ export class UsersService {
         "lastName",
         "role",
         "status",
-        "createdAt",
-      ],
+        "createdAt"
+      ]
     });
   }
 
   async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ["orders"],
+      relations: ["orders"]
     });
 
     if (!user) {
@@ -74,7 +66,7 @@ export class UsersService {
 
     if (updateUserDto.username) {
       const existingUser = await this.usersRepository.findOne({
-        where: { username: updateUserDto.username, id: Not(id) },
+        where: { username: updateUserDto.username, id: Not(id) }
       });
 
       if (existingUser) {
@@ -85,7 +77,7 @@ export class UsersService {
     // 避免查询条件可能是undefined的情况
     if (updateUserDto.email) {
       const existingUser = await this.usersRepository.findOne({
-        where: { email: updateUserDto.email, id: Not(id) },
+        where: { email: updateUserDto.email, id: Not(id) }
       });
 
       if (existingUser) {
@@ -105,13 +97,13 @@ export class UsersService {
   async findByEmail(email: string): Promise<User> {
     return await this.usersRepository.findOne({
       where: { email },
-      select: ["id", "username", "email", "password", "role", "status"],
+      select: ["id", "username", "email", "role", "status"]
     });
   }
 
   async findByUsername(username: string): Promise<User> {
     return await this.usersRepository.findOne({
-      where: { username },
+      where: { username }
     });
   }
 
@@ -122,7 +114,7 @@ export class UsersService {
     const [users, total] = await this.usersRepository.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
-      order: { createdAt: "DESC" },
+      order: { createdAt: "DESC" }
     });
 
     return { users, total };
@@ -134,37 +126,37 @@ export class UsersService {
         { username: Like(`%${query}%`) },
         { email: Like(`%${query}%`) },
         { firstName: Like(`%${query}%`) },
-        { lastName: Like(`%${query}%`) },
+        { lastName: Like(`%${query}%`) }
       ],
       order: { createdAt: "DESC" },
+      select: ["id", "username", "email"]
     });
   }
 
-  // 按角色查询
   async findByRole(role: UserRole): Promise<User[]> {
     return await this.usersRepository.find({
-      where: { role },
+      where: { role }
     });
   }
 
-  // 按状态查询
   async findByStatus(status: UserStatus): Promise<User[]> {
     return await this.usersRepository.find({
-      where: { status },
+      where: { status }
     });
   }
 
-  // 统计操作
   async getStats() {
     const totalUsers = await this.usersRepository.count();
     const activeUsers = await this.usersRepository.count({
-      where: { status: UserStatus.ACTIVE },
+      where: { status: UserStatus.ACTIVE }
     });
     const adminUsers = await this.usersRepository.count({
-      where: { role: UserRole.ADMIN },
+      where: { role: UserRole.ADMIN }
     });
 
-    // 按角色统计
+    // SELECT user.role AS "role", COUNT(*) AS "count"
+    // FROM users user
+    // GROUP BY user.role;
     const roleStats = await this.usersRepository
       .createQueryBuilder("user")
       .select("user.role", "role")
@@ -172,7 +164,6 @@ export class UsersService {
       .groupBy("user.role")
       .getRawMany();
 
-    // 按状态统计
     const statusStats = await this.usersRepository
       .createQueryBuilder("user")
       .select("user.status", "status")
@@ -185,7 +176,7 @@ export class UsersService {
       active: activeUsers,
       admins: adminUsers,
       roleStats,
-      statusStats,
+      statusStats
     };
   }
 
@@ -205,10 +196,10 @@ export class UsersService {
     return await this.usersRepository.find({
       where: {
         status: UserStatus.ACTIVE,
-        orders: Not(IsNull()),
+        orders: Not(IsNull())
       },
       relations: ["orders"],
-      order: { createdAt: "DESC" },
+      order: { createdAt: "DESC" }
     });
   }
 
@@ -235,32 +226,52 @@ export class UsersService {
     amount: number
   ): Promise<void> {
     await this.usersRepository.manager.transaction(async (manager) => {
+      // const fromUserResult = await manager.query(
+      //   "SELECT id, balance FROM users WHERE id = $1",
+      //   [fromUserId]
+      // );
       const fromUser = await manager.findOne(User, {
         where: { id: fromUserId },
+        select: ["id", "balance"]
       });
-      const toUser = await manager.findOne(User, { where: { id: toUserId } });
+
+      // const toUserResult = await manager.query(
+      //   "SELECT id, balance FROM users WHERE id = $1",
+      //   [toUserId]
+      // );
+      const toUser = await manager.findOne(User, {
+        where: { id: toUserId },
+        select: ["id", "balance"]
+      });
 
       if (!fromUser || !toUser) {
         throw new NotFoundException("用户不存在");
       }
 
-      if (fromUser.balance < amount) {
+      const transferAmount = parseFloat(amount.toString());
+      const fromUserBalance = parseFloat(fromUser.balance.toString());
+      const toUserBalance = parseFloat(toUser.balance.toString());
+
+      if (fromUserBalance < transferAmount) {
         throw new BadRequestException("余额不足");
       }
 
-      fromUser.balance -= amount;
-      toUser.balance += amount;
+      await manager.query("UPDATE users SET balance = $1 WHERE id = $2", [
+        fromUserBalance - transferAmount,
+        fromUserId
+      ]);
 
-      await manager.save(User, [fromUser, toUser]);
+      await manager.query("UPDATE users SET balance = $1 WHERE id = $2", [
+        toUserBalance + transferAmount,
+        toUserId
+      ]);
     });
   }
 
-  // 软删除示例（如果实体支持）
   async softDelete(id: string): Promise<void> {
     await this.usersRepository.softDelete(id);
   }
 
-  // 恢复软删除的记录
   async restore(id: string): Promise<void> {
     await this.usersRepository.restore(id);
   }
