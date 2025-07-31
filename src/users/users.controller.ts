@@ -11,15 +11,17 @@ import {
   HttpStatus,
   ParseIntPipe,
   DefaultValuePipe,
+  ParseEnumPipe,
+  ParseUUIDPipe
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
-import { ParamIdDto } from "./dto/param-id.dto";
 import { UpdateMultipleStatusDto } from "./dto/update-multiple-status.dto";
 import { DeleteMultipleDto } from "./dto/delete-multiple.dto";
 import { TransferBalanceDto } from "./dto/transfer-balance.dto";
 import { UserRole, UserStatus } from "./user.entity";
+import { EmailValidationPipe } from "../common/pipes/email-validation.pipe";
 
 @Controller("users")
 export class UsersController {
@@ -37,18 +39,21 @@ export class UsersController {
   }
 
   @Get(":id")
-  findOne(@Param() { id }: ParamIdDto) {
+  findOne(@Param("id", ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
   }
 
   @Patch(":id")
-  update(@Param() { id }: ParamIdDto, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() updateUserDto: UpdateUserDto
+  ) {
     return this.usersService.update(id, updateUserDto);
   }
 
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param() { id }: ParamIdDto) {
+  remove(@Param("id", ParseUUIDPipe) id: string) {
     return this.usersService.remove(id);
   }
 
@@ -58,17 +63,19 @@ export class UsersController {
   }
 
   @Get("role/:role")
-  findByRole(@Param("role") role: UserRole) {
+  findByRole(@Param("role", new ParseEnumPipe(UserRole)) role: UserRole) {
     return this.usersService.findByRole(role);
   }
 
   @Get("status/:status")
-  findByStatus(@Param("status") status: UserStatus) {
+  findByStatus(
+    @Param("status", new ParseEnumPipe(UserStatus)) status: UserStatus
+  ) {
     return this.usersService.findByStatus(status);
   }
 
   @Get("email/:email")
-  findByEmail(@Param("email") email: string) {
+  findByEmail(@Param("email", EmailValidationPipe) email: string) {
     return this.usersService.findByEmail(email);
   }
 
@@ -77,7 +84,6 @@ export class UsersController {
     return this.usersService.findByUsername(username);
   }
 
-  // 分页查询
   @Get("page/list")
   findWithPagination(
     @Query("page", new DefaultValuePipe(1), ParseIntPipe) page: number,
@@ -86,7 +92,6 @@ export class UsersController {
     return this.usersService.findWithPagination(page, limit);
   }
 
-  // 统计信息
   @Get("stats/overview")
   getStats() {
     return this.usersService.getStats();
@@ -135,12 +140,12 @@ export class UsersController {
   // 软删除操作
   @Delete("soft/:id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  softDelete(@Param() paramIdDto: ParamIdDto) {
-    return this.usersService.softDelete(paramIdDto.id);
+  softDelete(@Param("id", ParseUUIDPipe) id: string) {
+    return this.usersService.softDelete(id);
   }
 
   @Post("restore/:id")
-  restore(@Param() paramIdDto: ParamIdDto) {
-    return this.usersService.restore(paramIdDto.id);
+  restore(@Param("id", ParseUUIDPipe) id: string) {
+    return this.usersService.restore(id);
   }
 }
