@@ -9,6 +9,8 @@ import {
   Query,
   ParseIntPipe,
   DefaultValuePipe,
+  ParseUUIDPipe,
+  ParseEnumPipe,
 } from "@nestjs/common";
 import { ProductsService } from "./products.service";
 import { CreateProductDto } from "./dto/create-product.dto";
@@ -31,8 +33,8 @@ export class ProductsController {
   }
 
   @Get(":id")
-  findOne(@Param() paramIdDto: ParamIdDto) {
-    return this.productsService.findOne(paramIdDto.id);
+  findOne(@Param("id", ParseUUIDPipe) id: string) {
+    return this.productsService.findOne(id);
   }
 
   @Patch(":id")
@@ -44,23 +46,24 @@ export class ProductsController {
   }
 
   @Delete(":id")
-  remove(@Param() paramIdDto: ParamIdDto) {
-    return this.productsService.remove(paramIdDto.id);
+  remove(@Param("id", ParseUUIDPipe) id: string) {
+    return this.productsService.remove(id);
   }
 
-  // 高级查询
   @Get("category/:categoryId")
-  findByCategory(@Param("categoryId") categoryId: string) {
+  findByCategory(@Param("categoryId", ParseUUIDPipe) categoryId: string) {
     return this.productsService.findByCategory(categoryId);
   }
 
   @Get("status/:status")
-  findByStatus(@Param("status") status: ProductStatus) {
+  findByStatus(
+    @Param("status", new ParseEnumPipe(ProductStatus)) status: ProductStatus
+  ) {
     return this.productsService.findByStatus(status);
   }
 
   @Get("type/:type")
-  findByType(@Param("type") type: ProductType) {
+  findByType(@Param("type", new ParseEnumPipe(ProductType)) type: ProductType) {
     return this.productsService.findByType(type);
   }
 
