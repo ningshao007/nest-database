@@ -6,9 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  ParseUUIDPipe,
+  ParseEnumPipe,
 } from "@nestjs/common";
 import { OrdersService } from "./orders.service";
 import { ParamIdDto } from "./dto/param-id.dto";
+import { CreateOrderDto } from "./dto/create-order.dto";
+import { CreateOrderWithItemsDto } from "./dto/create-order-with-items.dto";
+import { UpdateOrderDto } from "./dto/update-order.dto";
 import { OrderStatus, PaymentStatus } from "./order.entity";
 
 @Controller("orders")
@@ -16,12 +21,12 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  create(@Body() createOrderDto: any) {
+  create(@Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(createOrderDto);
   }
 
   @Post("with-items")
-  createOrderWithItems(@Body() orderData: any) {
+  createOrderWithItems(@Body() orderData: CreateOrderWithItemsDto) {
     return this.ordersService.createOrderWithItems(orderData);
   }
 
@@ -36,28 +41,35 @@ export class OrdersController {
   }
 
   @Patch(":id")
-  update(@Param() paramIdDto: ParamIdDto, @Body() updateOrderDto: any) {
+  update(
+    @Param() paramIdDto: ParamIdDto,
+    @Body() updateOrderDto: UpdateOrderDto
+  ) {
     return this.ordersService.update(paramIdDto.id, updateOrderDto);
   }
 
   @Delete(":id")
-  remove(@Param() paramIdDto: ParamIdDto) {
-    return this.ordersService.remove(paramIdDto.id);
+  remove(@Param("id", ParseUUIDPipe) id: string) {
+    return this.ordersService.remove(id);
   }
 
-  // 高级查询
   @Get("user/:userId")
-  findByUser(@Param("userId") userId: string) {
+  findByUser(@Param("userId", ParseUUIDPipe) userId: string) {
     return this.ordersService.findByUser(userId);
   }
 
   @Get("status/:status")
-  findByStatus(@Param("status") status: OrderStatus) {
+  findByStatus(
+    @Param("status", new ParseEnumPipe(OrderStatus)) status: OrderStatus
+  ) {
     return this.ordersService.findByStatus(status);
   }
 
   @Get("payment/:paymentStatus")
-  findByPaymentStatus(@Param("paymentStatus") paymentStatus: PaymentStatus) {
+  findByPaymentStatus(
+    @Param("paymentStatus", new ParseEnumPipe(PaymentStatus))
+    paymentStatus: PaymentStatus
+  ) {
     return this.ordersService.findByPaymentStatus(paymentStatus);
   }
 
@@ -81,7 +93,6 @@ export class OrdersController {
     );
   }
 
-  // 统计信息
   @Get("stats/overview")
   getOrderStats() {
     return this.ordersService.getOrderStats();

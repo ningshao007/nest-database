@@ -1,12 +1,14 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException
+  BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Order, OrderStatus, PaymentStatus } from "./order.entity";
 import { OrderItem } from "./order-item.entity";
+import { UpdateOrderDto } from "./dto/update-order.dto";
 import { ProductsService } from "../products/products.service";
 
 @Injectable()
@@ -26,14 +28,14 @@ export class OrdersService {
 
   async findAll(): Promise<Order[]> {
     return await this.ordersRepository.find({
-      relations: ["user", "orderItems", "orderItems.product"]
+      relations: ["user", "orderItems", "orderItems.product"],
     });
   }
 
   async findOne(id: string): Promise<Order> {
     const order = await this.ordersRepository.findOne({
       where: { id },
-      relations: ["user", "orderItems", "orderItems.product"]
+      relations: ["user", "orderItems", "orderItems.product"],
     });
 
     if (!order) {
@@ -43,8 +45,24 @@ export class OrdersService {
     return order;
   }
 
-  async update(id: string, updateOrderDto: any): Promise<Order> {
+  async update(id: string, updateOrderDto: UpdateOrderDto): Promise<Order> {
     const order = await this.findOne(id);
+
+    if (
+      updateOrderDto.orderNumber &&
+      updateOrderDto.orderNumber !== order.orderNumber
+    ) {
+      const existingOrder = await this.ordersRepository.findOne({
+        where: { orderNumber: updateOrderDto.orderNumber },
+      });
+
+      if (existingOrder) {
+        throw new ConflictException(
+          `订单号 ${updateOrderDto.orderNumber} 已存在`
+        );
+      }
+    }
+
     Object.assign(order, updateOrderDto);
     return await this.ordersRepository.save(order);
   }
@@ -54,10 +72,8 @@ export class OrdersService {
     await this.ordersRepository.remove(order);
   }
 
-  // 创建订单（包含订单项）
   async createOrderWithItems(orderData: any): Promise<Order> {
     return await this.ordersRepository.manager.transaction(async (manager) => {
-      // 创建订单
       const order = manager.create(Order, {
         orderNumber: this.generateOrderNumber(),
         userId: orderData.userId,
@@ -65,7 +81,7 @@ export class OrdersService {
         totalAmount: 0,
         shippingAddress: orderData.shippingAddress,
         billingAddress: orderData.billingAddress,
-        notes: orderData.notes
+        notes: orderData.notes,
       });
 
       const savedOrder = await manager.save(Order, order);
@@ -92,8 +108,8 @@ export class OrdersService {
             name: product.name,
             sku: product.sku,
             price: product.price,
-            images: product.images
-          }
+            images: product.images,
+          },
         });
 
         orderItems.push(orderItem);
@@ -121,7 +137,6 @@ export class OrdersService {
     });
   }
 
-  // 更新订单状态
   async updateOrderStatus(
     orderId: string,
     status: OrderStatus
@@ -130,7 +145,6 @@ export class OrdersService {
 
     order.status = status;
 
-    // 根据状态设置相应的时间戳
     switch (status) {
       case OrderStatus.SHIPPED:
         order.shippedAt = new Date();
@@ -146,7 +160,6 @@ export class OrdersService {
     return await this.ordersRepository.save(order);
   }
 
-  // 更新支付状态
   async updatePaymentStatus(
     orderId: string,
     paymentStatus: PaymentStatus
@@ -156,34 +169,30 @@ export class OrdersService {
     return await this.ordersRepository.save(order);
   }
 
-  // 按用户查询订单
   async findByUser(userId: string): Promise<Order[]> {
     return await this.ordersRepository.find({
       where: { userId },
       relations: ["orderItems", "orderItems.product"],
-      order: { createdAt: "DESC" }
+      order: { createdAt: "DESC" },
     });
   }
 
-  // 按状态查询订单
   async findByStatus(status: OrderStatus): Promise<Order[]> {
     return await this.ordersRepository.find({
       where: { status },
       relations: ["user", "orderItems"],
-      order: { createdAt: "DESC" }
+      order: { createdAt: "DESC" },
     });
   }
 
-  // 按支付状态查询订单
   async findByPaymentStatus(paymentStatus: PaymentStatus): Promise<Order[]> {
     return await this.ordersRepository.find({
       where: { paymentStatus },
       relations: ["user", "orderItems"],
-      order: { createdAt: "DESC" }
+      order: { createdAt: "DESC" },
     });
   }
 
-  // 生成订单号
   private generateOrderNumber(): string {
     const timestamp = Date.now().toString();
     const random = Math.floor(Math.random() * 1000)
@@ -192,20 +201,18 @@ export class OrdersService {
     return `ORD${timestamp}${random}`;
   }
 
-  // 获取订单统计
   async getOrderStats() {
     const totalOrders = await this.ordersRepository.count();
     const pendingOrders = await this.ordersRepository.count({
-      where: { status: OrderStatus.PENDING }
+      where: { status: OrderStatus.PENDING },
     });
     const completedOrders = await this.ordersRepository.count({
-      where: { status: OrderStatus.DELIVERED }
+      where: { status: OrderStatus.DELIVERED },
     });
     const cancelledOrders = await this.ordersRepository.count({
-      where: { status: OrderStatus.CANCELLED }
+      where: { status: OrderStatus.CANCELLED },
     });
 
-    // 按状态统计
     const statusStats = await this.ordersRepository
       .createQueryBuilder("order")
       .select("order.status", "status")
@@ -213,7 +220,6 @@ export class OrdersService {
       .groupBy("order.status")
       .getRawMany();
 
-    // 按支付状态统计
     const paymentStats = await this.ordersRepository
       .createQueryBuilder("order")
       .select("order.payment_status", "paymentStatus")
@@ -227,7 +233,7 @@ export class OrdersService {
       completed: completedOrders,
       cancelled: cancelledOrders,
       statusStats,
-      paymentStats
+      paymentStats,
     };
   }
 }
