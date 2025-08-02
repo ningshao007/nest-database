@@ -7,7 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   ManyToMany,
-  JoinTable
+  JoinTable,
 } from "typeorm";
 import { Category } from "../categories/category.entity";
 import { OrderItem } from "../orders/order-item.entity";
@@ -16,13 +16,13 @@ export enum ProductStatus {
   ACTIVE = "active",
   INACTIVE = "inactive",
   OUT_OF_STOCK = "out_of_stock",
-  DISCONTINUED = "discontinued"
+  DISCONTINUED = "discontinued",
 }
 
 export enum ProductType {
   PHYSICAL = "physical",
   DIGITAL = "digital",
-  SERVICE = "service"
+  SERVICE = "service",
 }
 
 @Entity("products")
@@ -57,14 +57,14 @@ export class Product {
   @Column({
     type: "enum",
     enum: ProductStatus,
-    default: ProductStatus.ACTIVE
+    default: ProductStatus.ACTIVE,
   })
   status: ProductStatus;
 
   @Column({
     type: "enum",
     enum: ProductType,
-    default: ProductType.PHYSICAL
+    default: ProductType.PHYSICAL,
   })
   type: ProductType;
 

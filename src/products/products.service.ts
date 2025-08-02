@@ -325,23 +325,22 @@ export class ProductsService {
         p.name,
         p.sku,
         p.price,
-        p.stock_quantity,
-        p.sold_count,
+        p."stockQuantity",
+        p."soldCount",
         p.rating,
-        p.review_count,
+        p."reviewCount",
         c.name as category_name,
         COALESCE(SUM(oi.quantity), 0) as total_ordered,
-        COALESCE(SUM(oi.quantity * oi.unit_price), 0) as total_revenue
+        COALESCE(SUM(oi.quantity * oi."unitPrice"), 0) as total_revenue
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN categories c ON p."categoryId" = c.id
       LEFT JOIN order_items oi ON p.id = oi.product_id
       WHERE p.status = 'active'
-      GROUP BY p.id, p.name, p.sku, p.price, p.stock_quantity, p.sold_count, p.rating, p.review_count, c.name
+      GROUP BY p.id, p.name, p.sku, p.price, p."stockQuantity", p."soldCount", p.rating, p."reviewCount", c.name
       ORDER BY total_revenue DESC NULLS LAST
     `);
   }
 
-  // 标签搜索
   async findByTags(tags: string[]): Promise<Product[]> {
     return await this.productsRepository
       .createQueryBuilder("product")
@@ -351,7 +350,6 @@ export class ProductsService {
       .getMany();
   }
 
-  // 属性搜索
   async findByAttributes(attributes: Record<string, any>): Promise<Product[]> {
     return await this.productsRepository
       .createQueryBuilder("product")

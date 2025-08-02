@@ -16,6 +16,10 @@ import { ProductsService } from "./products.service";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { ParamIdDto } from "./dto/param-id.dto";
+import { BatchUpdateStockDto } from "./dto/batch-update-stock.dto";
+import { SearchAttributesDto } from "./dto/search-attributes.dto";
+import { UpdateRatingDto } from "./dto/update-rating.dto";
+import { TagsValidationPipe } from "../common/pipes/tags-validation.pipe";
 import { ProductStatus, ProductType } from "./product.entity";
 
 @Controller("products")
@@ -133,14 +137,15 @@ export class ProductsController {
   }
 
   @Get("tags/search")
-  findByTags(@Query("tags") tags: string) {
-    const tagArray = tags.split(",").map((tag) => tag.trim());
-    return this.productsService.findByTags(tagArray);
+  findByTags(@Query("tags", TagsValidationPipe) tags: string[]) {
+    return this.productsService.findByTags(tags);
   }
 
   @Post("attributes/search")
-  findByAttributes(@Body() attributes: Record<string, any>) {
-    return this.productsService.findByAttributes(attributes);
+  findByAttributes(@Body() searchAttributesDto: SearchAttributesDto) {
+    return this.productsService.findByAttributes(
+      searchAttributesDto.attributes
+    );
   }
 
   @Patch(":id/stock")
@@ -152,10 +157,10 @@ export class ProductsController {
   }
 
   @Post("stock/batch-update")
-  updateMultipleStock(
-    @Body() updates: { productId: string; quantity: number }[]
-  ) {
-    return this.productsService.updateMultipleStock(updates);
+  updateMultipleStock(@Body() batchUpdateStockDto: BatchUpdateStockDto) {
+    return this.productsService.updateMultipleStock(
+      batchUpdateStockDto.updates
+    );
   }
 
   @Post(":id/increment-sold")
@@ -177,8 +182,11 @@ export class ProductsController {
   @Post(":id/update-rating")
   updateRating(
     @Param() paramIdDto: ParamIdDto,
-    @Body() body: { rating: number }
+    @Body() updateRatingDto: UpdateRatingDto
   ) {
-    return this.productsService.updateRating(paramIdDto.id, body.rating);
+    return this.productsService.updateRating(
+      paramIdDto.id,
+      updateRatingDto.rating
+    );
   }
 }
