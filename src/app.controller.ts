@@ -1,43 +1,48 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get } from "@nestjs/common";
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
 
+@ApiTags("应用信息")
 @Controller()
 export class AppController {
   @Get()
+  @ApiOperation({ summary: "获取欢迎信息" })
   getHello(): string {
-    return 'NestJS + TypeORM + PostgreSQL 数据库学习项目';
+    return "NestJS + TypeORM + PostgreSQL 数据库学习项目";
   }
 
-  @Get('health')
+  @Get("health")
+  @ApiOperation({ summary: "获取应用健康状态" })
   getHealth() {
     return {
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || "development",
     };
   }
 
-  @Get('info')
+  @Get("info")
+  @ApiOperation({ summary: "获取应用详细信息" })
   getInfo() {
     return {
-      name: 'NestJS Database Learning Project',
-      version: '1.0.0',
-      description: '学习 NestJS + TypeORM + PostgreSQL 数据库操作',
+      name: "NestJS Database Learning Project",
+      version: "1.0.0",
+      description: "学习 NestJS + TypeORM + PostgreSQL 数据库操作",
       features: [
-        '完整的 CRUD 操作',
-        '复杂关联关系处理',
-        '高级查询和过滤',
-        '事务处理',
-        '数据验证',
-        '分页和搜索',
-        '统计和分析'
+        "完整的 CRUD 操作",
+        "复杂关联关系处理",
+        "高级查询和过滤",
+        "事务处理",
+        "数据验证",
+        "分页和搜索",
+        "统计和分析",
       ],
       modules: [
-        'Users - 用户管理',
-        'Products - 产品管理', 
-        'Categories - 分类管理',
-        'Orders - 订单管理'
-      ]
+        "Users - 用户管理",
+        "Products - 产品管理",
+        "Categories - 分类管理",
+        "Orders - 订单管理",
+      ],
     };
   }
-} 
+}

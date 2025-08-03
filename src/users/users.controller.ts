@@ -12,28 +12,32 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
   ParseEnumPipe,
-  ParseUUIDPipe
+  ParseUUIDPipe,
 } from "@nestjs/common";
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateMultipleStatusDto } from "./dto/update-multiple-status.dto";
 import { DeleteMultipleDto } from "./dto/delete-multiple.dto";
 import { TransferBalanceDto } from "./dto/transfer-balance.dto";
-import { UserRole, UserStatus } from "./user.entity";
+import { UserRole, UserStatus, User } from "./user.entity";
 import { EmailValidationPipe } from "../common/pipes/email-validation.pipe";
 
+@ApiTags("用户管理")
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: "创建用户" })
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
   @Get()
+  @ApiOperation({ summary: "获取所有用户" })
   findAll() {
     return this.usersService.findAll();
   }

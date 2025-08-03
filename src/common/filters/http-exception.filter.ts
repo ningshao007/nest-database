@@ -37,10 +37,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
     );
 
     const errorResponse = {
-      statusCode: status,
+      code: 1,
+      message: message,
+      data: null,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message: message,
     };
 
     response.status(status).json(errorResponse);
