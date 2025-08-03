@@ -127,6 +127,23 @@ export class UsersService {
     });
   }
 
+  async findByUsernameOrEmail(identifier: string): Promise<User> {
+    return await this.usersRepository.findOne({
+      where: [{ username: identifier }, { email: identifier }],
+      select: [
+        "id",
+        "username",
+        "email",
+        "password",
+        "firstName",
+        "lastName",
+        "role",
+        "status",
+        "createdAt",
+      ],
+    });
+  }
+
   async findWithPagination(
     page: number = 1,
     limit: number = 10
