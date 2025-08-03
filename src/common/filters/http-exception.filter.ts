@@ -7,7 +7,6 @@ import {
   Logger,
 } from "@nestjs/common";
 import { Request, Response } from "express";
-import { QueryFailedError, EntityNotFoundError } from "typeorm";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -32,7 +31,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exception.message;
     }
 
-    // 记录错误日志
     this.logger.error(
       `${request.method} ${request.url} - ${status} - ${message}`,
       exception instanceof Error ? exception.stack : undefined

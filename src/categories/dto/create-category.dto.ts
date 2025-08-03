@@ -5,7 +5,8 @@ import {
   IsNumber,
   IsObject,
   MaxLength,
-  Min
+  Min,
+  ValidateNested,
 } from "class-validator";
 
 export class CreateCategoryDto {
@@ -34,5 +35,8 @@ export class CreateCategoryDto {
 
   @IsOptional()
   @IsObject()
-  metadata?: Record<string, any>;
+  @ValidateNested()
+  metadata?: {
+    [key: string]: string | number | boolean;
+  };
 }

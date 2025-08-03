@@ -8,15 +8,16 @@ import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // 全局异常过滤器
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  // 全局验证管道
   app.useGlobalPipes(
     new ValidationPipe({
+      // 只保留DTO中定义的属性，删除其他属性
       whitelist: true,
+      // 如果请求中包含DTO中没有的属性，则抛出异常
       forbidNonWhitelisted: true,
-      transform: true
+      // 自动转换请求中的数据类型
+      transform: true,
     })
   );
 
@@ -30,7 +31,6 @@ async function bootstrap() {
   const documentFactory = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("api-docs", app, documentFactory);
 
-  // 全局前缀
   app.setGlobalPrefix("");
 
   const port = process.env.PORT || 3000;

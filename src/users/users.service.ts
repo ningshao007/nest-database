@@ -2,34 +2,54 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  BadRequestException
+  BadRequestException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Like, IsNull, Not } from "typeorm";
 import { User, UserRole, UserStatus } from "./user.entity";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
+import { PasswordService } from "../common/services/password.service";
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private usersRepository: Repository<User>
+    private usersRepository: Repository<User>,
+    private passwordService: PasswordService
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const existingUser = await this.usersRepository.findOne({
       where: [
         { username: createUserDto.username },
-        { email: createUserDto.email }
-      ]
+        { email: createUserDto.email },
+      ],
     });
 
     if (existingUser) {
       throw new ConflictException("用户名或邮箱已存在");
     }
 
-    const user = this.usersRepository.create(createUserDto);
+    // 验证密码强度
+    if (
+      !this.passwordService.validatePasswordStrength(createUserDto.password)
+    ) {
+      throw new BadRequestException(
+        "密码必须至少8个字符，包含大小写字母、数字和特殊字符"
+      );
+    }
+
+    // 加密密码
+    const hashedPassword = await this.passwordService.hashPassword(
+      createUserDto.password
+    );
+
+    const user = this.usersRepository.create({
+      ...createUserDto,
+      password: hashedPassword,
+    });
+
     return await this.usersRepository.save(user);
   }
 
@@ -43,15 +63,15 @@ export class UsersService {
         "lastName",
         "role",
         "status",
-        "createdAt"
-      ]
+        "createdAt",
+      ],
     });
   }
 
   async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ["orders"]
+      relations: ["orders"],
     });
 
     if (!user) {
@@ -66,7 +86,7 @@ export class UsersService {
 
     if (updateUserDto.username) {
       const existingUser = await this.usersRepository.findOne({
-        where: { username: updateUserDto.username, id: Not(id) }
+        where: { username: updateUserDto.username, id: Not(id) },
       });
 
       if (existingUser) {
@@ -77,7 +97,7 @@ export class UsersService {
     // 避免查询条件可能是undefined的情况
     if (updateUserDto.email) {
       const existingUser = await this.usersRepository.findOne({
-        where: { email: updateUserDto.email, id: Not(id) }
+        where: { email: updateUserDto.email, id: Not(id) },
       });
 
       if (existingUser) {
@@ -97,13 +117,13 @@ export class UsersService {
   async findByEmail(email: string): Promise<User> {
     return await this.usersRepository.findOne({
       where: { email },
-      select: ["id", "username", "email", "role", "status"]
+      select: ["id", "username", "email", "role", "status"],
     });
   }
 
   async findByUsername(username: string): Promise<User> {
     return await this.usersRepository.findOne({
-      where: { username }
+      where: { username },
     });
   }
 
@@ -114,7 +134,7 @@ export class UsersService {
     const [users, total] = await this.usersRepository.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
-      order: { createdAt: "DESC" }
+      order: { createdAt: "DESC" },
     });
 
     return { users, total };
@@ -126,32 +146,32 @@ export class UsersService {
         { username: Like(`%${query}%`) },
         { email: Like(`%${query}%`) },
         { firstName: Like(`%${query}%`) },
-        { lastName: Like(`%${query}%`) }
+        { lastName: Like(`%${query}%`) },
       ],
       order: { createdAt: "DESC" },
-      select: ["id", "username", "email"]
+      select: ["id", "username", "email"],
     });
   }
 
   async findByRole(role: UserRole): Promise<User[]> {
     return await this.usersRepository.find({
-      where: { role }
+      where: { role },
     });
   }
 
   async findByStatus(status: UserStatus): Promise<User[]> {
     return await this.usersRepository.find({
-      where: { status }
+      where: { status },
     });
   }
 
   async getStats() {
     const totalUsers = await this.usersRepository.count();
     const activeUsers = await this.usersRepository.count({
-      where: { status: UserStatus.ACTIVE }
+      where: { status: UserStatus.ACTIVE },
     });
     const adminUsers = await this.usersRepository.count({
-      where: { role: UserRole.ADMIN }
+      where: { role: UserRole.ADMIN },
     });
 
     // SELECT user.role AS "role", COUNT(*) AS "count"
@@ -176,7 +196,7 @@ export class UsersService {
       active: activeUsers,
       admins: adminUsers,
       roleStats,
-      statusStats
+      statusStats,
     };
   }
 
@@ -196,10 +216,10 @@ export class UsersService {
     return await this.usersRepository.find({
       where: {
         status: UserStatus.ACTIVE,
-        orders: Not(IsNull())
+        orders: Not(IsNull()),
       },
       relations: ["orders"],
-      order: { createdAt: "DESC" }
+      order: { createdAt: "DESC" },
     });
   }
 
@@ -232,7 +252,7 @@ export class UsersService {
       // );
       const fromUser = await manager.findOne(User, {
         where: { id: fromUserId },
-        select: ["id", "balance"]
+        select: ["id", "balance"],
       });
 
       // const toUserResult = await manager.query(
@@ -241,7 +261,7 @@ export class UsersService {
       // );
       const toUser = await manager.findOne(User, {
         where: { id: toUserId },
-        select: ["id", "balance"]
+        select: ["id", "balance"],
       });
 
       if (!fromUser || !toUser) {
@@ -258,12 +278,12 @@ export class UsersService {
 
       await manager.query("UPDATE users SET balance = $1 WHERE id = $2", [
         fromUserBalance - transferAmount,
-        fromUserId
+        fromUserId,
       ]);
 
       await manager.query("UPDATE users SET balance = $1 WHERE id = $2", [
         toUserBalance + transferAmount,
-        toUserId
+        toUserId,
       ]);
     });
   }

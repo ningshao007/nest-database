@@ -22,9 +22,9 @@ export class CreateUserDto {
   email: string;
 
   @IsString()
-  @MinLength(6)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-    message: "密码必须包含至少一个小写字母、一个大写字母和一个数字",
+  @MinLength(8, { message: "密码至少8个字符" })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/, {
+    message: "密码必须包含大小写字母、数字和特殊字符",
   })
   password: string;
 
